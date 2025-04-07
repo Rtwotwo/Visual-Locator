@@ -1,0 +1,67 @@
+两阶段方法：
+    本次实验所用数据集主要使用Tianzhibei/nwpu/ALTO数据集
+    分别验证不同以及不同视角下的差异
+
+1.采用Triplet Loss,CNN+Hashing等深度学习方法训练网络,实现Recall10高于90%的高精度召回CBIR以图搜图。
+    (1).使用ViT—Prithvi_100M作为预训练模型提取数据集的embedding,并将其转为hash码进行检索,实现初步CBIR
+        实验一：
+            数据集: train-test-val按照7:2:1进行数据集500*500分割
+            组织形式: dataset_name
+                            |______train
+                            |       |______database (68580)
+                            |       |______queries  (6860)
+                            |______test
+                            |       |______database (19620)
+                            |       |______queries  (1960)
+                            |______val
+                                    |______database (9800)
+                                    |______queries  (980)
+            实验结果: hash_length = 128
+                      Recall500 = 96.09%   Recall800 = 98.07%
+                      Recall600 = 96.92%   Recall900 = 98.38%
+                      Recall700 = 97.61%   Recall1000= 98.61%
+                      feature_shape(1,768)
+                      Recall@5: 60.9767%    Recall@10: 71.2974%     
+                      Recall@20: 80.5394%   Recall@120: 94.6356%
+
+    (2).根据一次检索结果,使用Dinov2_vitl14_pretrain.pth模型进行二次检索,实现高精度的匹配运行
+        拟定使用SelaVPR方法对数据集进行检索测试,满足ReCall20在90%的要求,数据集uav_visloc/ALTO
+            主要是对datasets_ws.py进行调整代码,适应文件的路径需求
+            组织形式: 组织形式同上述相同
+                      dataset_name
+                            |______train
+                            |       |______database (68580)
+                            |       |______queries  (6860)
+                            |______test
+                            |       |______database (19620)
+                            |       |______queries  (1960)
+                            |______val
+                                    |______database (9800)
+                                    |______queries  (980)
+            实验结果: feature_shape(1,1024)
+                      Recall@5: 95.0875%    Recall@10: 97.5219%     
+                      Recall@20: 98.9213%   Recall@30: 99.4169%
+    
+    (3).结论: 针对SelaVPR和Prithvi在tianzhibei上的变现而言,可以清晰地看到,
+              SelaVPR对于遥感图像有效特征的提取已经满足后续的图像配准的要求,
+              故可以开展后续实验。
+
+
+2.采用LoFTR,SuperGlue深度学习或者 SuperPoint基于特征等方法实现精确的图像配准
+  已知相关信息:经典方法就是SIFT,深度学习特征点代表性的就是Superpoint,
+              深度学习特征点代表性的就是Superpoint匹配就SuperGlue,
+              弱纹理区域最有代表性的是Lofter,然后他们后续的改进LightGlue
+              
+    (1)、使用opencv-python自带的SIFT,构建query-candidate投票选择最佳匹配
+        schedule: 相关结果可以查看/Redal/output/匹配结果
+        TODO: 需要计算相关IOU比例
+              提取到的特征点与原始的特征点映射关系
+              解决每次检索的数据缓存问题(使用的embedding cached技术)
+
+    (2)、采用superpoint+superglue实现有特征点和描述符的图像配准
+        schedule: 采用SP_SG组合方法时间图像特征点的匹配
+        TODO: 训练无人机+卫星视角下的检索问题,验证模型检索效率
+              已知模型来进行推理
+
+    (3)、拟采用LoFtr针对若纹理区域进行配准,无需考量特征点直接端到端
+        schedule: 端到端使用LoFTR预训练模型来制作,GitHub上寻找相关的模型代码

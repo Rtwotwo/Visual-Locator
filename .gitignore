@@ -1,0 +1,8 @@
+# ignore the dataset_vg folder
+datasets_vg/
+
+# ignore the weights folder
+weights/
+
+# ignore the embedding folder
+embedding/
