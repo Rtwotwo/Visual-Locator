@@ -22,7 +22,7 @@ def nwpu_config():
                         help='the folder name of queries')
     parser.add_argument('--queries_savename', type=str, default='queries',
                         help='the folder name of queries nwpu should be saved')
-    parser.add_argument('--skip_num', type=int, default=120,
+    parser.add_argument('--skip_num', type=int, default=80,
                         help='queries image dataset sparse hop frame number')
     parser.add_argument('--queries_width', type=int, default=512, help='width')
     parser.add_argument('--queries_height', type=int, default=512, help='height')
@@ -47,15 +47,19 @@ class QueryPartition(object):
             os.makedirs(self.queries_savepath)
             print(f'queries folder has been saved {self.queries_savepath}')
         self.queries_savecsvpath = os.path.join(self.args.dataset_savedir, self.args.queries_csvname)
-    def forward(self):
+    def rebuild_imgdata(self):
+        """重新分配queries的图像数据集,按照self.skip_num进行稀疏化"""
         offset_num = len(self.queries_filenames) // self.skip_num * self.skip_num
         for idx, filename in tqdm(enumerate(self.queries_filenames[:offset_num]), desc='partitioning queries'):
-            if idx % 120 == 0: 
-                frame_path = os.path.join(self.args.dataset_dir, self.args.queries_name, filename)
+            if idx % self.skip_num == 0: 
+                frame_path = os.path.join(self.args.dataset_dir, self.args.queries_name, f'{idx:06d}.jpg')
                 frame = cv2.imread(frame_path)
                 # 中心裁剪尺寸(512, 512)
                 frame = self.__center_clip__(frame)
-                cv2.imwrite(os.path.join(self.queries_savepath, f'{idx%120:06d}.jpg'), frame)
+                cv2.imwrite(os.path.join(self.queries_savepath, f'{idx//self.skip_num:06d}.jpg'), frame)
+    def rebuild_csvdata(self):
+        """重新分配queries的csv姿态经纬度数据集"""
+        
     def __center_clip__(self, frame):
         """中心裁剪每一帧的图像数据"""
         h,w = frame.shape[:2]
@@ -68,5 +72,5 @@ class QueryPartition(object):
 
 if __name__ == '__main__':
     qp = QueryPartition()
-    qp.forward()
+    qp.rebuild_imgdata()
         
