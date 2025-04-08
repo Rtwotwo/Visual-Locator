@@ -7,6 +7,9 @@ Homepage: https://github.com/Rtwotwo/Visual-Locator.git
 import os
 import cv2
 import argparse
+import rasterio
+from rasterio.windows import Window
+from pyproj import Transformer
 from tqdm import tqdm
 import pandas as pd
 
@@ -14,11 +17,12 @@ import pandas as pd
 def nwpu_config():
     parser = argparse.ArgumentParser(description='parameters for nwpu dataset',
                         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument_group('queries folder partition')
     parser.add_argument('--dataset_dir', type=str, default='datasets_vg/datasets/nwpu/val_0406',
                         help='the val_0406 preliminary collated dataset')
     parser.add_argument('--dataset_savedir', type=str, default='datasets_vg/datasets/nwpu/val_0407',
                         help='the name of dataset nwpu should be saved')
+    # queries related parameters
+    parser.add_argument_group('queries folder partition')
     parser.add_argument('--queries_name', type=str, default='queries',
                         help='the folder name of queries')
     parser.add_argument('--queries_savename', type=str, default='queries',
@@ -29,13 +33,25 @@ def nwpu_config():
     parser.add_argument('--queries_height', type=int, default=512, help='height')
     parser.add_argument('--queries_csvname', type=str, default='queries.csv',
                         help='the csv file name of queries')
-    
+    # references related parameters
     parser.add_argument_group('references folder partition')
+    parser.add_argument('--satellite_dir', type=str, default='datasets_vg/datasets/nwpu/basemap',
+                        help='the satellite image path')
+    parser.add_argument('--satellite_name', type=str, default='nwpu_small.tif',
+                        help='the folder name of references')
+    parser.add_argument('--references_savename', type=str, default='references/offset_0_None',
+                        help='the folder name of references')
+    parser.add_argument('--references_csvname', type=str, default='references.csv',
+                        help='references save csv file name')
     args = parser.parse_args()
     return args
     
 
 class QueryPartition(object):
+    """首先处理无人机影像数据, 获取queries的图像集以及相应的姿态坐标等位置
+    处理好的数据存储位置如下：
+    图像数据集: /data2/dataset/Redal/Redal/datasets_vg/datasets/nwpu/val_0407/queries
+    姿态数据集: /data2/dataset/Redal/Redal/datasets_vg/datasets/nwpu/val_0407/queries.csv"""
     def __init__(self, args=None, **kwargs):
         self.args = nwpu_config()
         self.skip_num = self.args.skip_num
@@ -50,7 +66,7 @@ class QueryPartition(object):
         self.queries_savecsvpath = os.path.join(self.args.dataset_savedir, self.args.queries_csvname)
         # 相关缓存数据
         self.orig_csvdata = pd.read_csv(self.queries_csvpath)
-    def rebuild_imgdata(self):
+    def forward(self):
         """重新分配queries的图像数据集,按照self.skip_num进行稀疏化
         重新分配queries的csv姿态经纬度数据集"""
         offset_num = len(self.queries_filenames) // self.skip_num * self.skip_num
@@ -77,8 +93,74 @@ class QueryPartition(object):
         cropped_frame = frame[start_y:start_y+crop_h, start_x:start_x+crop_w]
         return cropped_frame
 
+class ReferencePartition(object):
+    def __init__(self, args=None, **kwargs):
+        self.args = nwpu_config()
+        # 确定各个数据的存储地址路径
+        self.satellite_imgpath = os.path.join(self.args.satellite_dir, self.args.satellite_name)
+        self.references_savepath = os.path.join(self.args.dataset_savedir, self.args.references_savename)
+        if not os.path.exists(self.references_savepath):
+            os.makedirs(self.references_savepath)
+        self.references_csvpath = os.path.join(self.args.dataset_savedir, self.args.references_csvname)
+        self.queries_csvpath = os.path.join(self.args.dataset_savedir, self.args.queries_csvname)
+        # 初始化proj的相关transform配置，self.transformer用于utm -> 经纬度
+        self.transformer = Transformer.from_crs("epsg:32649", "epsg:4326")
+        self.transformer_toutm = Transformer.from_crs("epsg:4326", "epsg:32649")
+        self.queries_csvdata = pd.read_csv(self.queries_csvpath)
+        # 获取geotiff图像的四个顶点的经纬度
+        with rasterio.open(self.satellite_imgpath) as src:
+            bounds = src.bounds
+            src_crs = src.crs
+            transformer_crs = Transformer.from_crs(src_crs, "EPSG:4326", always_xy=True)
+            left, bottom, right, top = bounds
+            corners = [(left, top), (right, top), (right, bottom), (left, bottom)]
+            # 左上角、右上角、右下角、左下角
+            self.corners = [transformer_crs.transform(*corner) for corner in corners]
+            self.length_longitude = self.corners[1][0] - self.corners[0][0]
+            self.length_latitude = self.corners[0][1] - self.corners[2][1]
+    def forward(self):
+        with rasterio.open(self.satellite_imgpath) as src:
+            # make utm_center coordinate formatclass: (easting, northing, name)
+            utm_center = self.queries_csvdata.iloc[:, :]
+            utm_center = utm_center.apply(lambda row: (row['easting'], row['northing'], row['name']), axis=1).tolist()
+            for utm in tqdm(utm_center, desc='partitioning references'):
+                window = self.__get_window__(src, (utm[0], utm[1]))
+                img_array = src.read(window=window)
+                transform = src.window_transform(window)
+                # 保存分割的文件geo_tiff格式
+                meta = src.meta.copy()
+                meta.update({
+                    "height": self.args.queries_height,
+                    "width": self.args.queries_width,
+                    "transform": transform})
+                # 创建保存文件路径
+                geotiff_savepath = os.path.join(self.references_savepath, f"{utm[2].split('.')[0]}.tif")
+                with rasterio.open(geotiff_savepath, 'w', **meta) as dst:
+                    dst.write(img_array)  
+        # 保存references的图像对应数据坐标csv文件
+        references_csvdata = {'easting': self.queries_csvdata['easting'], 
+                              'northing': self.queries_csvdata['northing'],
+                              'name': self.queries_csvdata['name']}
+        references_csvdata = pd.DataFrame(references_csvdata)
+        references_csvdata.to_csv(self.references_csvpath, index=False)
+    def __get_window__(self, src, utm_center):
+        """获取需要裁剪的卫星影像的裁剪窗口
+        :param src: 输入的satallite数据源
+        :param utm_center: 输入的utm坐标中心点"""
+        orig_width, orig_height = src.width, src.height
+        # 将utm转为经纬度进行线性插值确定像素坐标
+        latitude , longitude = self.transformer.transform(utm_center[0], utm_center[1])
+        center_x = int((longitude - self.corners[0][0]) / self.length_longitude * orig_width)
+        center_y = int((self.corners[0][1] - latitude) / self.length_latitude * orig_height)
+        # 计算裁剪左上角起点
+        col_start = center_x - self.args.queries_width // 2
+        row_start = center_y - self.args.queries_height // 2
+        window = Window(col_start, row_start, self.args.queries_width, self.args.queries_height)
+        return window
+
 
 if __name__ == '__main__':
-    qp = QueryPartition()
-    qp.rebuild_imgdata()
-        
+    # qp = QueryPartition()
+    # qp.forward()
+    rp = ReferencePartition()
+    rp.forward()
