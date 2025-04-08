@@ -8,6 +8,7 @@ import os
 import cv2
 import argparse
 from tqdm import tqdm
+import pandas as pd
 
 
 def nwpu_config():
@@ -47,8 +48,11 @@ class QueryPartition(object):
             os.makedirs(self.queries_savepath)
             print(f'queries folder has been saved {self.queries_savepath}')
         self.queries_savecsvpath = os.path.join(self.args.dataset_savedir, self.args.queries_csvname)
+        # 相关缓存数据
+        self.orig_csvdata = pd.read_csv(self.queries_csvpath)
     def rebuild_imgdata(self):
-        """重新分配queries的图像数据集,按照self.skip_num进行稀疏化"""
+        """重新分配queries的图像数据集,按照self.skip_num进行稀疏化
+        重新分配queries的csv姿态经纬度数据集"""
         offset_num = len(self.queries_filenames) // self.skip_num * self.skip_num
         for idx, filename in tqdm(enumerate(self.queries_filenames[:offset_num]), desc='partitioning queries'):
             if idx % self.skip_num == 0: 
@@ -56,10 +60,14 @@ class QueryPartition(object):
                 frame = cv2.imread(frame_path)
                 # 中心裁剪尺寸(512, 512)
                 frame = self.__center_clip__(frame)
-                cv2.imwrite(os.path.join(self.queries_savepath, f'{idx//self.skip_num:06d}.jpg'), frame)
-    def rebuild_csvdata(self):
-        """重新分配queries的csv姿态经纬度数据集"""
-        
+                cv2.imwrite(os.path.join(self.queries_savepath, f'{idx//self.skip_num:06d}.jpg'), frame)  
+        # 选择对应的csv_data数据进行处理
+        selected_csvdata_list = [idx for idx in range(0, len(self.queries_filenames), self.skip_num)]
+        print(selected_csvdata_list)
+        selected_csvdata = self.orig_csvdata.iloc[selected_csvdata_list]
+        last_column_name = selected_csvdata.columns[-1]
+        selected_csvdata[last_column_name] = selected_csvdata[last_column_name].apply(lambda x: f"{int(x.split('.')[0])//self.skip_num:06d}.jpg")
+        selected_csvdata.to_csv(self.queries_savecsvpath, index=False)
     def __center_clip__(self, frame):
         """中心裁剪每一帧的图像数据"""
         h,w = frame.shape[:2]
