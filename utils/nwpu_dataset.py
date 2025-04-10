@@ -6,6 +6,7 @@ Homepage: https://github.com/Rtwotwo/Visual-Locator.git
 """
 import os
 import cv2
+import math
 import argparse
 import rasterio
 from rasterio.windows import Window
@@ -27,7 +28,7 @@ def nwpu_config():
                         help='the folder name of queries')
     parser.add_argument('--queries_savename', type=str, default='queries',
                         help='the folder name of queries nwpu should be saved')
-    parser.add_argument('--skip_num', type=int, default=80,
+    parser.add_argument('--skip_num', type=int, default=10,
                         help='queries image dataset sparse hop frame number')
     parser.add_argument('--queries_width', type=int, default=512, help='width')
     parser.add_argument('--queries_height', type=int, default=512, help='height')
@@ -43,6 +44,12 @@ def nwpu_config():
                         help='the folder name of references')
     parser.add_argument('--references_csvname', type=str, default='references.csv',
                         help='references save csv file name')
+    # gt_matches related parameters
+    parser.add_argument_group('gt_matches folder partition')
+    parser.add_argument('--gt_matches_savename', type=str, default='gt_matches.csv',
+                        help='the folder name of gt_matches')
+    parser.add_argument('--skip_group_num', type=int, default=4,
+                        help='the group number of gt_matches')
     args = parser.parse_args()
     return args
     
@@ -69,8 +76,8 @@ class QueryPartition(object):
     def forward(self):
         """重新分配queries的图像数据集,按照self.skip_num进行稀疏化
         重新分配queries的csv姿态经纬度数据集"""
-        offset_num = len(self.queries_filenames) // self.skip_num * self.skip_num
-        for idx, filename in tqdm(enumerate(self.queries_filenames[:offset_num]), desc='partitioning queries'):
+        # offset_num = len(self.queries_filenames) // self.skip_num * self.skip_num
+        for idx, filename in tqdm(enumerate(self.queries_filenames), desc='partitioning queries'):
             if idx % self.skip_num == 0: 
                 frame_path = os.path.join(self.args.dataset_dir, self.args.queries_name, f'{idx:06d}.jpg')
                 frame = cv2.imread(frame_path)
@@ -92,6 +99,7 @@ class QueryPartition(object):
         start_x, start_y = int(w/2-crop_w/2), int(h/2-crop_h/2)
         cropped_frame = frame[start_y:start_y+crop_h, start_x:start_x+crop_w]
         return cropped_frame
+
 
 class ReferencePartition(object):
     def __init__(self, args=None, **kwargs):
@@ -123,7 +131,9 @@ class ReferencePartition(object):
             # make utm_center coordinate formatclass: (easting, northing, name)
             utm_center = self.queries_csvdata.iloc[:, :]
             utm_center = utm_center.apply(lambda row: (row['easting'], row['northing'], row['name']), axis=1).tolist()
-            for utm in tqdm(utm_center, desc='partitioning references'):
+            # 选择每四张作为一组进行分析,单独提出每组第一张作为references
+            utm_center_first = utm_center[0::self.args.skip_group_num]
+            for utm in tqdm(utm_center_first, desc='partitioning references'):
                 window = self.__get_window__(src, (utm[0], utm[1]))
                 img_array = src.read(window=window)
                 transform = src.window_transform(window)
@@ -134,13 +144,14 @@ class ReferencePartition(object):
                     "width": self.args.queries_width,
                     "transform": transform})
                 # 创建保存文件路径
-                geotiff_savepath = os.path.join(self.references_savepath, f"{utm[2].split('.')[0]}.tif")
+                geotiff_savepath = os.path.join(self.references_savepath, f"{int(utm[2].split('.')[0])//self.args.skip_group_num:06d}.tif")
                 with rasterio.open(geotiff_savepath, 'w', **meta) as dst:
                     dst.write(img_array)  
-        # 保存references的图像对应数据坐标csv文件
-        references_csvdata = {'easting': self.queries_csvdata['easting'], 
-                              'northing': self.queries_csvdata['northing'],
-                              'name': self.queries_csvdata['name']}
+        # 保存references的图像对应数据坐标references.csv文件
+        references_csvdata = {'easting': self.queries_csvdata['easting'].iloc[::self.args.skip_group_num], 
+                              'northing': self.queries_csvdata['northing'].iloc[::self.args.skip_group_num],
+                              'name': self.queries_csvdata['name'].iloc[::self.args.skip_group_num].apply(lambda x: 
+                                'offset_0_None/'+f"{int(x.split('.')[0])//self.args.skip_group_num:06d}.tif")}
         references_csvdata = pd.DataFrame(references_csvdata)
         references_csvdata.to_csv(self.references_csvpath, index=False)
     def __get_window__(self, src, utm_center):
@@ -157,10 +168,30 @@ class ReferencePartition(object):
         row_start = center_y - self.args.queries_height // 2
         window = Window(col_start, row_start, self.args.queries_width, self.args.queries_height)
         return window
-
-
+    def __gt_matches__(self):
+        """计算utm坐标与经纬度坐标的匹配关系,生成GT_Matches.csv文件"""
+        queries_csvdata = pd.read_csv(self.queries_csvpath)
+        references_csvdata = pd.read_csv(self.references_csvpath)
+        self.gt_matches_data = {}
+        query_ind, query_name, ref_ind, ref_name, distance = [], [], [], [], []
+        # 直接使用csv文件的数据进行操作
+        for q_id in range(len(queries_csvdata)):
+            query_ind.append(q_id)
+            query_name.append(queries_csvdata['name'].iloc[q_id])
+            ref_ind.append( q_id // self.args.skip_group_num)
+            ref_name.append(references_csvdata['name'].iloc[q_id // self.args.skip_group_num])
+            distance.append(math.sqrt((queries_csvdata['easting'].iloc[q_id] - references_csvdata['easting'].iloc[q_id // self.args.skip_group_num])**2 +
+                                                (queries_csvdata['northing'].iloc[q_id] - references_csvdata['northing'].iloc[q_id // self.args.skip_group_num])**2) )
+        # 保存gt_matches.csv文件
+        self.gt_matches_data = {'query_ind': query_ind, 'query_name': query_name, 'ref_ind': ref_ind, 'ref_name': ref_name, 'distance': distance}
+        gt_matches_csvpath = os.path.join(self.args.dataset_savedir, self.args.gt_matches_savename)
+        gt_matches_csvdata = pd.DataFrame(self.gt_matches_data)
+        gt_matches_csvdata.to_csv(gt_matches_csvpath, index=False)
+        
+        
 if __name__ == '__main__':
-    # qp = QueryPartition()
-    # qp.forward()
+    qp = QueryPartition()
+    qp.forward()
     rp = ReferencePartition()
     rp.forward()
+    rp.__gt_matches__()
