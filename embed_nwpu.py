@@ -20,8 +20,8 @@ from PIL import Image
 from torch.utils.data import Dataset
 import torch.nn as nn
 from torchvision import transforms
-from ..models.selavpr import network
-from Redal.models.prithvi.Prithvi_ViT import RetrievalViT
+from models.selavpr import network
+from models.prithvi.Prithvi_ViT import RetrievalViT
 
 selavpr_transform = transforms.Compose([
     transforms.ToTensor(),
@@ -88,18 +88,18 @@ class AltoDataset(Dataset):
                     mlp_ratio=4., norm_layer=partial(torch.nn.LayerNorm, eps=1e-6),
                     norm_pix_loss=False, weights=self.weight_path).to(self.device)
         else:raise  ValueError('There is satisfied model class to build vit_model')
-        
     def __len__(self):
         return len(self.dataset_model_path)
-    
     def __getitem__(self):
         # specified the code for nwpu dataset
         self.embeddings, self.address = [],[]
         self.alto_embed_paths = None      
+        # if self.args.dataset_proc == 'val_0407':
         if self.args.dataset_proc == 'train':
             # the dataset_model_path(parent dir) with children dirs
             database_query_dirs = os.listdir(self.dataset_model_path)
             for dir in database_query_dirs:
+                # 如果使用nwpu dataset, 需要将database换成references/offset_0_None
                 if dir == 'database' and dir == self.args.dataset_mode:
                     full_dir = os.path.join(self.dataset_model_path,'database')
                     for file in tqdm(os.listdir(full_dir), desc='====processing train database data'):
@@ -190,3 +190,5 @@ if __name__ == '__main__':
     args = parsers()
     alto_dataset = AltoDataset(args, transform=selavpr_transform)
     alto_embed_paths = alto_dataset.__save_embeddata__()
+    #  python embed_nwpu.py --dataset_name=nwpu --dataset_proc=val_0407 --dist_offset=offset_0_None --save
+    # _mode=queries --dataset_mode=queries
