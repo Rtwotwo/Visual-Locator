@@ -42,11 +42,11 @@ def config():
                         help='you can choose train/test/val')
     
     # Processing drone data
-    parser.add_argument('--uav_video', type=str, default='video', help="the uav video's directory")
+    parser.add_argument('--uav_video', type=str, default='video/video_0406', help="the uav video's directory")
     parser.add_argument('--video_name', type=str, default='uav_video.mp4', help='the video of uav')
-    parser.add_argument('--attitude', type=str, default='uav_attitude', help='the attitude data name, plus .txt/.csv')
+    parser.add_argument('--attitude', type=str, default='video_timestamp', help='the attitude data name, plus .txt/.csv')
     parser.add_argument('--video_save', type=str, default='queries', help='convert video to images and save folder')
-    parser.add_argument('--video_folder', type=str, default='val', help='the dataset save mode folder val')
+    parser.add_argument('--video_folder', type=str, default='val_0406', help='the dataset save mode folder val')
         
     args = parser.parse_args()
     return args
