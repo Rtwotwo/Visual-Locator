@@ -59,7 +59,7 @@ def sift_match_pro(input_img1_path, input_img2_path, dis_threshold=0.75):
         dst_pts = np.float32([keypoints2[m.trainIdx].pt for m in good_matches]).reshape(-1, 2)
         
         # 增大 reproject error 阈值（如从5.0→35.0）
-        H, mask = cv2.findHomography(src_pts, dst_pts, cv2.USAC_MAGSAC , 40.0)
+        H, mask = cv2.findHomography(src_pts, dst_pts, cv2.USAC_MAGSAC , 20.0)
         matches_mask = mask.ravel().tolist()
         good_matches = [m for m, mk in zip(good_matches, matches_mask) if mk == 1]
         matched_img = cv2.drawMatches(input_img1, keypoints1, input_img2, keypoints2,
