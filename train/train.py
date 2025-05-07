@@ -1,19 +1,25 @@
+""" 
+Author: Redal
+Date: 2025/05/07
+TODO: 
+Homepage: 
 """
-TODO: 使用dinov2预训练模型进行微调,使用Adapter Fine-Tuning的方式
-      进行小参量微调, 同时记录模型运行过程debug
-Time: 2025/03/14-Redal
-"""
+import math
 import os
 import sys
-import argparse
-import h5py
-import pathlib
+import logging
+import numpy as np
+from tqdm import tqdm
 
 import torch
-import torchvision
-from torchvision.transforms import transform
+import torch.nn as nn
+import multiprocessing
+from os.path import join
+from datetime import datetime
+import torchvision.transforms as transforms
+from torch.utils.data.dataloader import DataLoader
+torch.backends.cudnn.benchmark = True
 
+import utils 
 
-
-#######################  定义参量阈  ###########################
 

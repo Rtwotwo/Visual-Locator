@@ -90,6 +90,7 @@ class QueryPartition(object):
         selected_csvdata = self.orig_csvdata.iloc[selected_csvdata_list]
         last_column_name = selected_csvdata.columns[-1]
         selected_csvdata[last_column_name] = selected_csvdata[last_column_name].apply(lambda x: f"{int(x.split('.')[0])//self.skip_num:06d}.jpg")
+        
         selected_csvdata.to_csv(self.queries_savecsvpath, index=False)
     def __center_clip__(self, frame):
         """中心裁剪每一帧的图像数据"""
@@ -166,7 +167,7 @@ class ReferencePartition(object):
         # 计算裁剪左上角起点
         col_start = center_x - self.args.queries_width // 2
         row_start = center_y - self.args.queries_height // 2
-        window = Window(col_start, row_start, self.args.queries_width, self.args.queries_height)
+        window = Window(col_start, row_start, self.args.queries_width*1.5, self.args.queries_height*1.5)
         return window
     def __gt_matches__(self):
         """计算utm坐标与经纬度坐标的匹配关系,生成GT_Matches.csv文件"""
