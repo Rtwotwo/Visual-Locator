@@ -18,7 +18,7 @@ from torchvision.transforms import transforms
 from utils.hash_code import get_hash
 from models.selavpr import network
 from models.sift.SIFT import sift_candidate_match
-from models.sift.SIFT import sift_match
+from models.sift.SIFT import sift_match, sift_match_pro
 
 device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
 selavpr_transform = transforms.Compose([
@@ -40,7 +40,7 @@ def config():
                         help='embed_class consists of nwpu/UAV/tianzhibei')
     parser.add_argument('--method', type=str, default='sift',
                         help='method for retrievaling the correct image consist of sift/spsg/loftr')
-    parser.add_argument('--top_k', type=int, default=100, 
+    parser.add_argument('--top_k', type=int, default=20, 
                         help='find the k images which satisfing the query')
     parser.add_argument('--simi_method', type=str, default='hamming',
                         help='some methods are hamming/euclidean/cosine/dotproduct/')
@@ -169,13 +169,13 @@ class NwpuNet:
             # convert bit-class to utf-8 class
             candi_path = [p.decode('utf-8') for p in candi_path]
             candi_best_path = sift_candidate_match(qu_ad[idx], candi_path)
-            matches, registration = sift_match(qu_ad[idx], candi_best_path)
+            matches, registration = sift_match_pro(qu_ad[idx], candi_best_path)
             # save registrated img into output dir
             if not os.path.exists(self.args.save_visual):
                 os.makedirs(self.args.save_visual)
             cv2.imwrite(os.path.join(self.args.save_visual, f'output_{matches_num:06d}.jpg'),registration)
             matches_num += 1
-            print(f'匹配关键点数目:\t{len(matches)}')
+            print(f'匹配关键点数目:\t{len(matches)}\t匹配结果路径:\toutput_{matches_num:06d}.jpg')
 
         
 
