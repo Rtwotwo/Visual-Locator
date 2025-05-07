@@ -27,7 +27,7 @@ selavpr_transform = transforms.Compose([
     transforms.ToTensor(),
     transforms.Resize((224, 224), antialias=True),
     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])
-os.environ['CUDA_VISIBLE_DEVICES'] = '2'
+os.environ['CUDA_VISIBLE_DEVICES'] = '7'
 
 
 ######################### 定义变量解析 ###########################
@@ -40,7 +40,7 @@ def parsers():
                         help="there are two datasets you can choose ['tianzhibei', 'UAV']")
     parser.add_argument('--dataset_proc', type=str, default='train',
                         help="there are some choices ['train', 'test', 'val']")
-    parser.add_argument('--dataset_mode', type=str, default='database',
+    parser.add_argument('--dataset_mode', type=str, default='references',
                         help='test:database train:database/queries val:database/queries')
     parser.add_argument('--dist_offset', type=str, default='offset_0_None',
                         help='you can choose offset_{0/20/40}_{North/South}')
@@ -100,7 +100,7 @@ class AltoDataset(Dataset):
             database_query_dirs = os.listdir(self.dataset_model_path)
             for dir in database_query_dirs:
                 # 如果使用nwpu dataset, 需要将database换成references/offset_0_None
-                if dir == 'references/offset_0_None' and dir == self.args.dataset_mode:
+                if dir == 'references' and dir == self.args.dataset_mode:
                     full_dir = os.path.join(self.dataset_model_path,'references/offset_0_None')
                     for file in tqdm(os.listdir(full_dir), desc='====processing train database data'):
                         full_path = os.path.join(full_dir, file)
@@ -162,6 +162,7 @@ class AltoDataset(Dataset):
         self.save_dir = os.path.join(self.args.save_dir, self.args.save_mode)
         self.save_filepath = os.path.join(self.save_dir,self.args.model_name+'_'+self.args.dataset_mode+
                   '_'+self.args.dataset_name+'_'+self.args.dataset_proc+'.h5')
+        print(self.save_filepath)
         print(f'====Ready to save the embeddings and the filepath is below:\n{self.save_filepath}')
         self.use_h5py_save_features(alto_embed_paths, self.save_filepath)
         print('====All done!')
@@ -182,8 +183,8 @@ class AltoDataset(Dataset):
         
         
 ########################### 主程序测试 #######################################
-# python embed_nwpu.py --dataset_name=UAV --dataset_proc=train              #
-# --dist_offset=offset_0_None --save_mode=database --dataset_mode=database  #
+# python embed_nwpu.py --dataset_name=nwpu --dataset_proc=val_0407  
+# --dist_offset=offset_0_None --save_mode=database --dataset_mode=queries
 #############################################################################
 if __name__ == '__main__':
     # format the alto dataset to matrix and save it
