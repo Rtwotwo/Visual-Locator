@@ -164,6 +164,7 @@ class NwpuNet:
         qu_path = 'embedding/queries/selavpr_queries_nwpu_val_0407.h5'
         _, qu_ad = embed_to_list(read_data(qu_path))
         qu_ad = [p.decode('utf-8') for p in qu_ad]
+        matches_num = 0
         for idx, candi_path in enumerate(self.top_k_paths):
             # convert bit-class to utf-8 class
             candi_path = [p.decode('utf-8') for p in candi_path]
@@ -172,8 +173,9 @@ class NwpuNet:
             # save registrated img into output dir
             if not os.path.exists(self.args.save_visual):
                 os.makedirs(self.args.save_visual)
-            cv2.imwrite(os.path.join(self.args.save_visual, 'output.jpg'),registration)
-            print(len(matches))
+            cv2.imwrite(os.path.join(self.args.save_visual, f'output_{matches_num:06d}.jpg'),registration)
+            matches_num += 1
+            print(f'匹配关键点数目:\t{len(matches)}')
 
         
 
