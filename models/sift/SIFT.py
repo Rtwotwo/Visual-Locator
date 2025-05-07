@@ -37,12 +37,12 @@ def sift_match_pro(input_img1_path, input_img2_path, dis_threshold=0.75):
     进行遥感+无人机连续帧视角配准
     :param input_img1_path: 输入配准图像路径,要求为gray格式
     :param input_img2_path: 输入配准图像路径,要求为gray格式"""
-    sift = cv2.SIFT_create(nfeatures=0,  # 特征点的最大数量
-                           nOctaveLayers=4,  # 每个倍频程的层数
-                           contrastThreshold=0.01,  # 对比度阈值
-                           edgeThreshold=25,  # 边缘阈值
-                           sigma=3.0)  # 高斯滤波器标准差
-    
+    # sift = cv2.SIFT_create(nfeatures=0,  # 特征点的最大数量
+    #                        nOctaveLayers=3,  # 每个倍频程的层数
+    #                        contrastThreshold=0.01,  # 对比度阈值
+    #                        edgeThreshold=25,  # 边缘阈值
+    #                        sigma=1.4)  # 高斯滤波器标准差
+    sift = cv2.SIFT_create()
     bf = cv2.BFMatcher()
     # 加载图像并转换为灰度图像
     input_img1 = cv2.imread(input_img1_path, cv2.IMREAD_GRAYSCALE)
@@ -58,8 +58,8 @@ def sift_match_pro(input_img1_path, input_img2_path, dis_threshold=0.75):
         src_pts = np.float32([keypoints1[m.queryIdx].pt for m in good_matches]).reshape(-1, 2)
         dst_pts = np.float32([keypoints2[m.trainIdx].pt for m in good_matches]).reshape(-1, 2)
         
-        # 增大 reproject error 阈值（如从5.0→25.0）
-        H, mask = cv2.findHomography(src_pts, dst_pts, cv2.USAC_MAGSAC , 25.0)
+        # 增大 reproject error 阈值（如从5.0→35.0）
+        H, mask = cv2.findHomography(src_pts, dst_pts, cv2.USAC_MAGSAC , 40.0)
         matches_mask = mask.ravel().tolist()
         good_matches = [m for m, mk in zip(good_matches, matches_mask) if mk == 1]
         matched_img = cv2.drawMatches(input_img1, keypoints1, input_img2, keypoints2,

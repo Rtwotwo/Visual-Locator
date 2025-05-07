@@ -40,7 +40,7 @@ def config():
                         help='embed_class consists of nwpu/UAV/tianzhibei')
     parser.add_argument('--method', type=str, default='sift',
                         help='method for retrievaling the correct image consist of sift/spsg/loftr')
-    parser.add_argument('--top_k', type=int, default=20, 
+    parser.add_argument('--top_k', type=int, default=50, 
                         help='find the k images which satisfing the query')
     parser.add_argument('--simi_method', type=str, default='hamming',
                         help='some methods are hamming/euclidean/cosine/dotproduct/')
@@ -174,8 +174,8 @@ class NwpuNet:
             if not os.path.exists(self.args.save_visual):
                 os.makedirs(self.args.save_visual)
             cv2.imwrite(os.path.join(self.args.save_visual, f'output_{matches_num:06d}.jpg'),registration)
-            matches_num += 1
             print(f'匹配关键点数目:\t{len(matches)}\t匹配结果路径:\toutput_{matches_num:06d}.jpg')
+            matches_num += 1
 
         
 
