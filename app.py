@@ -19,7 +19,7 @@ from utils.hash_code import get_hash
 from models.selavpr import network
 from models.sift.SIFT import sift_candidate_match
 from models.sift.SIFT import sift_match, sift_match_pro
-from models.spsg.test import superpoint_match, superpoint_match_pro
+from models.spsg.spsg import superpoint_match, superpoint_match_pro, superglue_match
 
 device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
 selavpr_transform = transforms.Compose([
@@ -170,7 +170,7 @@ class NwpuNet:
             # convert bit-class to utf-8 class
             candi_path = [p.decode('utf-8') for p in candi_path]
             candi_best_path = sift_candidate_match(qu_ad[idx], candi_path)
-            matches, registration = superpoint_match_pro(qu_ad[idx], candi_best_path)
+            matches, registration = superglue_match(qu_ad[idx], candi_best_path)
             # save registrated img into output dir
             if not os.path.exists(self.args.save_visual):
                 os.makedirs(self.args.save_visual)
