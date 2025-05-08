@@ -179,7 +179,6 @@ class NwpuNet:
             matches_num += 1
 
         
-
 ###########################  主函数测试  ####################################
 """ python app.py --single_query=/data2/dataset/Redal/Redal/datasets_vg
  /datasets/nwpu/train/queries/small_0_8.tif"""

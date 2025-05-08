@@ -166,8 +166,8 @@ def superglue_match(img1_path, img2_path, device='cuda', max_keypoints=-1, match
     good_matches = [(i, matches['matches0'][0, i].item()) for i in range(matches['matches0'].shape[1]) 
                     if matches['matches0'][0, i] > -1]
     matched_img = cv2.drawMatches(
-        image0, [cv2.KeyPoint(x=kp[0], y=kp[1], _size=1) for kp in keypoints0],
-        image1, [cv2.KeyPoint(x=kp[0], y=kp[1], _size=1) for kp in keypoints1],
+        image0, [cv2.KeyPoint(x=kp[0], y=kp[1], size=1) for kp in keypoints0],
+        image1, [cv2.KeyPoint(x=kp[0], y=kp[1], size=1) for kp in keypoints1],
         [cv2.DMatch(_imgIdx=0, _queryIdx=m[0], _trainIdx=m[1], _distance=0) for m in good_matches],
         None, flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
     return matches, matched_img
