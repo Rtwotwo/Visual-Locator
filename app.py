@@ -165,18 +165,22 @@ class NwpuNet:
         qu_path = 'embedding/queries/selavpr_queries_nwpu_val_0407.h5'
         _, qu_ad = embed_to_list(read_data(qu_path))
         qu_ad = [p.decode('utf-8') for p in qu_ad]
-        matches_num = 0
+        matches_num, count_num = 0, 0
         for idx, candi_path in enumerate(self.top_k_paths):
             # convert bit-class to utf-8 class
             candi_path = [p.decode('utf-8') for p in candi_path]
             candi_best_path = sift_candidate_match(qu_ad[idx], candi_path)
-            matches, registration = superglue_match(qu_ad[idx], candi_best_path)
+            matches, registration = sift_match(qu_ad[idx], candi_best_path)
             # save registrated img into output dir
             if not os.path.exists(self.args.save_visual):
                 os.makedirs(self.args.save_visual)
-            cv2.imwrite(os.path.join(self.args.save_visual, f'output_{matches_num:06d}.jpg'),registration)
+            cv2.imwrite(os.path.join(self.args.save_visual, 'sift',f'output_{matches_num:06d}.jpg'),registration)
             print(f'匹配关键点数目:\t{len(matches)}\t匹配结果路径:\toutput_{matches_num:06d}.jpg')
             matches_num += 1
+            if len(matches) > 20:
+                count_num += 1
+        print(f'检索到的图片数量:\t{matches_num}\t匹配成功的图片数量:\t{count_num}')
+        print(f'匹配成功度:{matches_num/count_num*100:.4f}%')
 
         
 ###########################  主函数测试  ####################################
