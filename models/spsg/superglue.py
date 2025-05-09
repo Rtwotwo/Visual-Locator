@@ -189,8 +189,8 @@ class SuperGlue(nn.Module):
         # path = path / 'weights/superglue_{}.pth'.format(self.config['weights'])
         path = self.config['path']
         self.load_state_dict(torch.load(path))
-        print('Loaded SuperGlue model (\"{}\" weights)'.format(
-            self.config['weights']))
+        # print('Loaded SuperGlue model (\"{}\" weights)'.format(
+        #     self.config['weights']))
 
     def forward(self, data):
         """Run SuperGlue on a pair of keypoints and descriptors"""
