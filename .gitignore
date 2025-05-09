@@ -6,3 +6,6 @@ weights/
 
 # ignore the embedding folder
 embedding/
+
+# ignore output folder
+output/
