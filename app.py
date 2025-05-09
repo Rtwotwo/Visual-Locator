@@ -170,11 +170,11 @@ class NwpuNet:
             # convert bit-class to utf-8 class
             candi_path = [p.decode('utf-8') for p in candi_path]
             candi_best_path = sift_candidate_match(qu_ad[idx], candi_path)
-            matches, registration = sift_match(qu_ad[idx], candi_best_path)
+            matches, registration = superpoint_match(qu_ad[idx], candi_best_path)
             # save registrated img into output dir
             if not os.path.exists(self.args.save_visual):
                 os.makedirs(self.args.save_visual)
-            cv2.imwrite(os.path.join(self.args.save_visual, 'sift+ransac',f'output_{matches_num:06d}.jpg'),registration)
+            cv2.imwrite(os.path.join(self.args.save_visual, 'supo',f'output_{matches_num:06d}.jpg'),registration)
             print(f'匹配关键点数目:\t{len(matches)}\t匹配结果路径:\toutput_{matches_num:06d}.jpg')
             matches_num += 1
             if len(matches) > 20:
