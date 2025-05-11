@@ -90,9 +90,9 @@ def sift_match_pro(input_img1_path, input_img2_path, dis_threshold=0.75):
     :param input_img2_path: 输入配准图像路径,要求为gray格式"""
     sift = cv2.SIFT_create(nfeatures=0,  # 特征点的最大数量
                            nOctaveLayers=3,  # 每个倍频程的层数
-                           contrastThreshold=0.01,  # 对比度阈值
-                           edgeThreshold=25,  # 边缘阈值
-                           sigma=1.4)  # 高斯滤波器标准差
+                           contrastThreshold=0.03,  # 对比度阈值
+                           edgeThreshold=15,  # 边缘阈值
+                           sigma=3.0)  # 高斯滤波器标准差
     bf = cv2.BFMatcher()
     # 加载图像并转换为灰度图像
     input_img1 = cv2.imread(input_img1_path, cv2.IMREAD_GRAYSCALE)
@@ -130,9 +130,9 @@ def sift_candidate_match_pro(query_img_path, candi_img_paths, dis_threshold=0.75
     :return: best_match_path: 最佳匹配图像路径 (str)"""
     sift = cv2.SIFT_create(nfeatures=0,  # 特征点的最大数量
                            nOctaveLayers=3,  # 每个倍频程的层数
-                           contrastThreshold=0.01,  # 对比度阈值
-                           edgeThreshold=25,  # 边缘阈值
-                           sigma=1.4)  # 高斯滤波器标准差
+                           contrastThreshold=0.03,  # 对比度阈值
+                           edgeThreshold=15,  # 边缘阈值
+                           sigma=3.0)  # 高斯滤波器标准差
     bf = cv2.BFMatcher()
     query_img = cv2.imread(query_img_path, cv2.IMREAD_GRAYSCALE)
     query_kp, query_desc = sift.detectAndCompute(query_img, None)
