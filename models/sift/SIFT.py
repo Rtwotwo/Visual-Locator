@@ -9,6 +9,16 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
+def sift_match_show(matched_img):
+    """使用matplotlib显示配准结果
+    :param matched_img: 输入配准图像,要求为gray格式"""
+    plt.imshow(matched_img)
+    plt.show()
+    
+
+############################################################
+# 函数功能: SiFT图像匹配
+############################################################
 def sift_match(input_img1_path, input_img2_path, dis_threshold=0.75):
     """使用SIFT算法提取图像特征点以及描述符 - 单张图像配准
     进行遥感+无人机连续帧视角配准
@@ -29,46 +39,6 @@ def sift_match(input_img1_path, input_img2_path, dis_threshold=0.75):
     # 绘制匹配结果并返回
     matched_img = cv2.drawMatches(input_img1, keypoints1, input_img2, keypoints2, 
                 good_matches, None, flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
-    return good_matches, matched_img
-
-
-def sift_match_pro(input_img1_path, input_img2_path, dis_threshold=0.75):
-    """使用SIFT算法提取图像特征点以及描述符 - 单张图像配准
-    进行遥感+无人机连续帧视角配准
-    :param input_img1_path: 输入配准图像路径,要求为gray格式
-    :param input_img2_path: 输入配准图像路径,要求为gray格式"""
-    # sift = cv2.SIFT_create(nfeatures=0,  # 特征点的最大数量
-    #                        nOctaveLayers=3,  # 每个倍频程的层数
-    #                        contrastThreshold=0.01,  # 对比度阈值
-    #                        edgeThreshold=25,  # 边缘阈值
-    #                        sigma=1.4)  # 高斯滤波器标准差
-    sift = cv2.SIFT_create()
-    bf = cv2.BFMatcher()
-    # 加载图像并转换为灰度图像
-    input_img1 = cv2.imread(input_img1_path, cv2.IMREAD_GRAYSCALE)
-    input_img2 = cv2.imread(input_img2_path, cv2.IMREAD_GRAYSCALE)
-    keypoints1, descriptors1 = sift.detectAndCompute(input_img1, None)
-    keypoints2, descriptors2 = sift.detectAndCompute(input_img2, None)
-    matches = bf.knnMatch(descriptors1, descriptors2, k=2)
-    good_matches = []
-    for m, n in matches:
-        if m.distance < dis_threshold * n.distance:
-            good_matches.append(m)
-    if len(good_matches) > 4:  # 至少需要4个点来计算单应性矩阵
-        src_pts = np.float32([keypoints1[m.queryIdx].pt for m in good_matches]).reshape(-1, 2)
-        dst_pts = np.float32([keypoints2[m.trainIdx].pt for m in good_matches]).reshape(-1, 2)
-        
-        # 增大 reproject error 阈值（如从5.0→35.0）
-        H, mask = cv2.findHomography(src_pts, dst_pts, cv2.USAC_MAGSAC , 20.0)
-        matches_mask = mask.ravel().tolist()
-        good_matches = [m for m, mk in zip(good_matches, matches_mask) if mk == 1]
-        matched_img = cv2.drawMatches(input_img1, keypoints1, input_img2, keypoints2,
-                                      good_matches, None,
-                                      flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
-    else:
-        print("Not enough matches are found - {}/{}".format(len(good_matches), 4))
-        matches_mask = None
-        matched_img = cv2.hconcat([input_img1, input_img2])
     return good_matches, matched_img
 
 
@@ -110,9 +80,87 @@ def sift_candidate_match(query_img_path, candi_img_paths, dis_threshold=0.7):
     return best_match_path
         
 
-def sift_match_show(matched_img):
-    """使用matplotlib显示配准结果
-    :param matched_img: 输入配准图像,要求为gray格式"""
-    plt.imshow(matched_img)
-    plt.show()
-    
+############################################################
+# 函数功能: SiFT+RANSAC图像匹配
+############################################################
+def sift_match_pro(input_img1_path, input_img2_path, dis_threshold=0.75):
+    """使用SIFT算法提取图像特征点以及描述符 - 单张图像配准
+    进行遥感+无人机连续帧视角配准
+    :param input_img1_path: 输入配准图像路径,要求为gray格式
+    :param input_img2_path: 输入配准图像路径,要求为gray格式"""
+    sift = cv2.SIFT_create(nfeatures=0,  # 特征点的最大数量
+                           nOctaveLayers=3,  # 每个倍频程的层数
+                           contrastThreshold=0.01,  # 对比度阈值
+                           edgeThreshold=25,  # 边缘阈值
+                           sigma=1.4)  # 高斯滤波器标准差
+    bf = cv2.BFMatcher()
+    # 加载图像并转换为灰度图像
+    input_img1 = cv2.imread(input_img1_path, cv2.IMREAD_GRAYSCALE)
+    input_img2 = cv2.imread(input_img2_path, cv2.IMREAD_GRAYSCALE)
+    keypoints1, descriptors1 = sift.detectAndCompute(input_img1, None)
+    keypoints2, descriptors2 = sift.detectAndCompute(input_img2, None)
+    matches = bf.knnMatch(descriptors1, descriptors2, k=2)
+    good_matches = []
+    for m, n in matches:
+        if m.distance < dis_threshold * n.distance:
+            good_matches.append(m)
+    if len(good_matches) > 4:  # 至少需要4个点来计算单应性矩阵
+        src_pts = np.float32([keypoints1[m.queryIdx].pt for m in good_matches]).reshape(-1, 2)
+        dst_pts = np.float32([keypoints2[m.trainIdx].pt for m in good_matches]).reshape(-1, 2)
+        
+        # 增大 reproject error 阈值（如从5.0→35.0）
+        H, mask = cv2.findHomography(src_pts, dst_pts, cv2.USAC_MAGSAC , 20.0)
+        matches_mask = mask.ravel().tolist()
+        good_matches = [m for m, mk in zip(good_matches, matches_mask) if mk == 1]
+        matched_img = cv2.drawMatches(input_img1, keypoints1, input_img2, keypoints2,
+                                      good_matches, None,
+                                      flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
+    else:
+        print("Not enough matches are found - {}/{}".format(len(good_matches), 4))
+        matches_mask = None
+        matched_img = cv2.hconcat([input_img1, input_img2])
+    return good_matches, matched_img
+
+
+def sift_candidate_match_pro(query_img_path, candi_img_paths, dis_threshold=0.75):
+    """使用 SIFT + RANSAC 算法从多个候选图像中找出与查询图像最匹配的一张。
+    :param query_img_path: 查询图像路径 (str)
+    :param candi_img_paths: 候选图像路径列表 (list of str)
+    :param dis_threshold: BFMatcher 距离比值阈值，默认为 0.75
+    :return: best_match_path: 最佳匹配图像路径 (str)"""
+    sift = cv2.SIFT_create(nfeatures=0,  # 特征点的最大数量
+                           nOctaveLayers=3,  # 每个倍频程的层数
+                           contrastThreshold=0.01,  # 对比度阈值
+                           edgeThreshold=25,  # 边缘阈值
+                           sigma=1.4)  # 高斯滤波器标准差
+    bf = cv2.BFMatcher()
+    query_img = cv2.imread(query_img_path, cv2.IMREAD_GRAYSCALE)
+    query_kp, query_desc = sift.detectAndCompute(query_img, None)
+    best_inlier_count = 0
+    best_match_path = None
+
+    for candi_path in candi_img_paths:
+        candidate_img = cv2.imread(candi_path, cv2.IMREAD_GRAYSCALE)
+        candidate_kp, candidate_desc = sift.detectAndCompute(candidate_img, None)
+        matches = bf.knnMatch(query_desc, candidate_desc, k=2)
+        good_matches = []
+        for m, n in matches:
+            if m.distance < dis_threshold * n.distance:
+                good_matches.append(m)
+        if len(good_matches) < 4:
+            print(f"[跳过] {candi_path} 匹配点不足4个")
+            continue
+        src_pts = np.float32([query_kp[m.queryIdx].pt for m in good_matches]).reshape(-1, 2)
+        dst_pts = np.float32([candidate_kp[m.trainIdx].pt for m in good_matches]).reshape(-1, 2)
+        # 使用 RANSAC 计算单应性矩阵
+        H, mask = cv2.findHomography(src_pts, dst_pts, cv2.USAC_MAGSAC, 20.0)
+        if mask is None:
+            print(f"[跳过] {candi_path} Homography 计算失败")
+            continue
+        # 统计内点数量
+        inliers = [good_matches[i] for i in range(len(mask)) if mask[i][0] == 1]
+        inlier_count = len(inliers)
+        if inlier_count > best_inlier_count:
+            best_inlier_count = inlier_count
+            best_match_path = candi_path
+    return best_match_path
