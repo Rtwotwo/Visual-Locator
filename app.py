@@ -171,12 +171,15 @@ class NwpuNet:
         for idx, candi_path in enumerate(self.top_k_paths):
             # convert bit-class to utf-8 class
             candi_path = [p.decode('utf-8') for p in candi_path]
-            candi_best_path = superglue_candidate_match(qu_ad[idx], candi_path)
-            matches, registration = superglue_match(qu_ad[idx], candi_best_path)
+            candi_best_path = sift_candidate_match_pro(qu_ad[idx], candi_path)
+            matches, registration = sift_match_pro(qu_ad[idx], candi_best_path)
+            # 读取保存查询和候选图像
+            query_img = cv2.imread(qu_ad[idx]); cv2.imwrite(os.path.join(self.args.save_visual, 'query',f'query_{matches_num:06d}.jpg'), query_img)
+            candi_img = cv2.imread(candi_best_path); cv2.imwrite(os.path.join(self.args.save_visual, 'candidate',f'candi_{matches_num:06d}.jpg'), candi_img)
             # save registrated img into output dir
             if not os.path.exists(self.args.save_visual):
                 os.makedirs(self.args.save_visual)
-            cv2.imwrite(os.path.join(self.args.save_visual, 'supo+sugl',f'output_{matches_num:06d}.jpg'),registration)
+            cv2.imwrite(os.path.join(self.args.save_visual, 'sift+ransac',f'output_{matches_num:06d}.jpg'),registration)
             print(f'匹配关键点数目:\t{len(matches)}\t匹配结果路径:\toutput_{matches_num:06d}.jpg')
             matches_num += 1
             if len(matches) > 20:

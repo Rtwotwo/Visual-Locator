@@ -1,6 +1,9 @@
 # :rocket: Visual Locator :rocket:
 
-his project designs an absolute visual positioning software for drones based on deep learning. The design process of the software is to train on the server using eight RTX3090 graphics cards with a video memory of 24G to obtain an image retrieval model. Then, when the recall rates of the top 1, 5, 10, and 20 of the model on the test set meet certain requirements, save the model weights for subsequent calls. Then, it is necessary to perform image registration tests on the top K images retrieved. We provide SIFT, SuperPoint, and LoFTR training and test model weights for testing and registration, and provide different registration model algorithms for different scenarios such as seasonal changes and lighting changes.  
+This project designs an absolute visual positioning software for drones based on deep learning. The design process of the software is to train on the server using eight RTX3090 graphics cards with a video memory of 24G to obtain an image retrieval model. Then, when the recall rates of the top 1, 5, 10, and 20 of the model on the test set meet certain requirements, save the model weights for subsequent calls. Then, it is necessary to perform image registration tests on the top K images retrieved. We provide SIFT, SuperPoint, and LoFTR training and test model weights for testing and registration, and provide different registration model algorithms for different scenarios such as seasonal changes and lighting changes.  
+<div align='center'>
+<img src='assets/project_struture.jpg'>
+</div>
 
 ## 1.Project Structure :fire:
 
@@ -8,6 +11,9 @@ The main design idea of the software is through a two-stage method of image retr
 
 | Query Image | Reference Image | Retrieved Image |
 | :---: | :---: | :---: |
-| ![query image](output/query.jpg) | ![reference image](output/candi.jpg) | ![retrieved image](output/output.jpg) |
+| ![query image](output/query/query_000000.jpg) | ![reference image](output/candidate/candi_000000.jpg) | ![retrieved image](output/sift+ransac/output_000000.jpg) |
+| ![query image](output/query/query_000001.jpg) | ![reference image](output/candidate/candi_000001.jpg) | ![retrieved image](output/sift+ransac/output_000001.jpg) |
+| ![query image](output/query/query_0000002.jpg) | ![reference image](output/candidate/candi_000002.jpg) | ![retrieved image](output/sift+ransac/output_000002.jpg) |
+| ![query image](output/query/query_000003.jpg) | ![reference image](output/candidate/candi_000003.jpg) | ![retrieved image](output/sift+ransac/output_000003.jpg) |
 
 ## Continuously Updating
