@@ -167,7 +167,6 @@ class Block(nn.Module):
     ):
         """
         Simple block wrapping a mixer class with LayerNorm/RMSNorm and residual connection"
-
         This Block has a slightly different structure compared to a regular
         prenorm Transformer block.
         The standard block is: LN -> MHA/MLP -> Add.
@@ -724,3 +723,8 @@ def map_huge_patch16_224(pretrained=False, **kwargs):
         )
         model.load_state_dict(checkpoint["model"])
     return model
+
+
+if __name__ == "__main__":
+    model = map_large_patch16_224(pretrained=False)
+    print(model)

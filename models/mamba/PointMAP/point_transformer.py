@@ -236,7 +236,7 @@ class MaskTransformer(nn.Module):
         self.depth = config.transformer_config.depth
         self.drop_path_rate = config.transformer_config.drop_path_rate
         self.num_heads = config.transformer_config.num_heads
-        print_log(f'[args] {config.transformer_config}', logger='Transformer')
+        print(f'[args] {config.transformer_config}', logger='Transformer')
         # embedding
         self.encoder_dims = config.transformer_config.encoder_dims
         self.encoder = Encoder(encoder_channel=self.encoder_dims)
@@ -355,7 +355,7 @@ class MaskTransformer(nn.Module):
 class Point_MAE(nn.Module):
     def __init__(self, config):
         super().__init__()
-        print_log(f'[Point_MAE] ', logger='Point_MAE')
+        print(f'[Point_MAE] ', logger='Point_MAE')
         self.config = config
         self.trans_dim = config.transformer_config.trans_dim
         self.MAE_encoder = MaskTransformer(config)
@@ -379,7 +379,7 @@ class Point_MAE(nn.Module):
             num_heads=self.decoder_num_heads,
         )
 
-        print_log(f'[Point_MAE] divide point cloud into G{self.num_group} x S{self.group_size} points ...',
+        print(f'[Point_MAE] divide point cloud into G{self.num_group} x S{self.group_size} points ...',
                   logger='Point_MAE')
         self.group_divider = Group(num_group=self.num_group, group_size=self.group_size)
 
@@ -526,21 +526,21 @@ class PointTransformer(nn.Module):
             incompatible = self.load_state_dict(base_ckpt, strict=False)
 
             if incompatible.missing_keys:
-                print_log('missing_keys', logger='Transformer')
-                print_log(
+                print('missing_keys', logger='Transformer')
+                print(
                     get_missing_parameters_message(incompatible.missing_keys),
                     logger='Transformer'
                 )
             if incompatible.unexpected_keys:
-                print_log('unexpected_keys', logger='Transformer')
-                print_log(
+                print('unexpected_keys', logger='Transformer')
+                print(
                     get_unexpected_parameters_message(incompatible.unexpected_keys),
                     logger='Transformer'
                 )
 
-            print_log(f'[Transformer] Successful Loading the ckpt from {bert_ckpt_path}', logger='Transformer')
+            print(f'[Transformer] Successful Loading the ckpt from {bert_ckpt_path}', logger='Transformer')
         else:
-            print_log('Training from scratch!!!', logger='Transformer')
+            print('Training from scratch!!!', logger='Transformer')
             self.apply(self._init_weights)
 
     def _init_weights(self, m):
