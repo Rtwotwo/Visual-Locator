@@ -27,9 +27,7 @@ except ImportError:
 
 from timm.models.vision_transformer import Block as Block_vit
 
-__all__ = [
-    'map_tiny_patch16_224', 'map_small_patch16_224', 'map_base_patch16_224', 'map_large_patch16_224','map_huge_patch16_224'
-]
+__all__ = ['map_tiny_patch16_224', 'map_small_patch16_224', 'map_base_patch16_224', 'map_large_patch16_224','map_huge_patch16_224']
 
 
 class Mlp(nn.Module):
