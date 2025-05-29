@@ -21,7 +21,7 @@ from utils import get_cls_idx
 from mamba_custom import Mamba
 
 try:
-    from mamba_ssm.ops.triton.layernorm import RMSNorm, layer_norm_fn, rms_norm_fn
+    from mamba_ssm.ops.triton.layer_norm import RMSNorm, layer_norm_fn, rms_norm_fn
 except ImportError:
     RMSNorm, layer_norm_fn, rms_norm_fn = None, None, None
 
@@ -335,7 +335,7 @@ class VisionMamba(nn.Module):
                  dtype=None,
                  num_cls_tokens=1,
                  cls_reduce=1,
-                 num_heads=12,
+                 num_heads=16,
                  decoder_embed_dim = 192,
                  decoder_num_heads = 16,
                  mlp_ratio = 4.0,
@@ -724,5 +724,5 @@ def map_huge_patch16_224(pretrained=False, **kwargs):
 
 
 if __name__ == "__main__":
-    model = map_large_patch16_224(pretrained=False)
+    model = map_small_patch16_224(pretrained=False)
     print(model)

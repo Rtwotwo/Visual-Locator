@@ -22,6 +22,7 @@ import torch.nn as nn
 from torchvision import transforms
 from models.selavpr import network
 from models.prithvi.Prithvi_ViT import RetrievalViT
+from models.mambaMap.models_mamba import map_huge_patch16_224
 
 selavpr_transform = transforms.Compose([
     transforms.ToTensor(),
