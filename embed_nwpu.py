@@ -22,13 +22,14 @@ import torch.nn as nn
 from torchvision import transforms
 from models.selavpr import network
 from models.prithvi.Prithvi_ViT import RetrievalViT
-from models.mambaMap.models_mamba import map_huge_patch16_224
+from models.MambaVision.mamba_vision import mamba_vision_B
+from models.MambaVision.mamba_vision import mamba_vision_L
 
 selavpr_transform = transforms.Compose([
     transforms.ToTensor(),
     transforms.Resize((224, 224), antialias=True),
     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])
-os.environ['CUDA_VISIBLE_DEVICES'] = '7'
+# os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 
 
 ######################### 定义变量解析 ###########################
@@ -53,8 +54,8 @@ def parsers():
                         help='please write down the correct weight direction')
     parser.add_argument('--weight_name', type=str, default='dinov2_vitl14_pretrain.pth',
                         help="there are some choices ['dinov2_vitl14_pretrain.pth', 'Prithvi_100M.pt']")
-    parser.add_argument('--embed_dim', type=int, default=1024, 
-                        help='the embed_dim should satisfies the model input need')
+    parser.add_argument('--embed_dim', type=int, default=1000, 
+                        help='the embed_dim should satisfies the model input need mamba=1000, vit=1024')
     parser.add_argument('--save_dir', type=str, default='/data2/dataset/Redal/Redal/embedding',
                         help='save the remote sensing image embedding direction')
     parser.add_argument('--save_name', type=str, default=None,
@@ -75,11 +76,13 @@ class AltoDataset(Dataset):
         self.embed_dim = args.embed_dim
         self.weight_path = os.path.join(args.weight_dir, args.weight_name)
         self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+        # self.device = torch.device('cpu')
         self.dataset_model_path = os.path.join(args.dataset_dir, 
                             args.dataset_name, args.dataset_proc)
         
         if args.model_name == 'selavpr':
-            self.vit_model = network.GeoLocalizationNet(weight_path=self.weight_path).to(self.device)
+            # self.vit_model = network.GeoLocalizationNet(weight_path=self.weight_path).to(self.device)
+            self.vit_model = mamba_vision_L(pretrained=True).to(self.device)
         elif args.model_name == 'prithvi_100m':
             # Prithvi_100M model input image should satisfied with 6 channels, depend on the self.chan_proj
             self.chan_proj = nn.Conv2d(in_channels=3, out_channels=6)
@@ -107,7 +110,8 @@ class AltoDataset(Dataset):
                         full_path = os.path.join(full_dir, file)
                         img = self.transform(Image.open(full_path).convert('RGB')).to(self.device).unsqueeze(0)
                         embeddings = self.vit_model(img)
-                        self.embeddings.append(embeddings[1].detach().cpu().numpy())
+                        # self.embeddings.append(embeddings[1].detach().cpu().numpy())  # This is for vit model
+                        self.embeddings.append(embeddings.detach().cpu().numpy())  # This is for MambaVision model
                         self.address.append(full_path)
                     self.embeddings = np.array(self.embeddings).reshape(-1,self.embed_dim) 
                     print(f'====train database embeddings shape: {self.embeddings.shape}')
@@ -119,7 +123,8 @@ class AltoDataset(Dataset):
                         full_path = os.path.join(full_dir, file)
                         img = self.transform(Image.open(full_path).convert('RGB')).to(self.device).unsqueeze(0)
                         embeddings = self.vit_model(img)
-                        self.embeddings.append(embeddings[1].detach().cpu().numpy())
+                        # self.embeddings.append(embeddings[1].detach().cpu().numpy())  # This is for vit model
+                        self.embeddings.append(embeddings.detach().cpu().numpy())  # This is for MambaVision model
                         self.address.append(full_path)
                     self.embeddings = np.array(self.embeddings).reshape(-1,self.embed_dim) 
                     print(f'====train queries embeddings shape: {self.embeddings.shape}')

@@ -7,5 +7,5 @@ weights/
 # ignore the embedding folder
 embedding/
 
-# ignore output folder
-# output/
+# ignore checkpoints folder
+models/MambaVision/checkpoints/

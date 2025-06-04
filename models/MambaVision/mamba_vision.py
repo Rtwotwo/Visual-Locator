@@ -836,7 +836,8 @@ def mamba_vision_S(pretrained=False, **kwargs):
 @register_pip_model
 @register_model
 def mamba_vision_B(pretrained=False, **kwargs):
-    model_path = kwargs.pop("model_path", "/tmp/mamba_vision_B.pth.tar")
+    # model_path = kwargs.pop("model_path", "/tmp/mamba_vision_B.pth.tar")
+    model_path = kwargs.pop("model_path", "models/MambaVision/checkpoints/mambavision_base_1k.pth.tar")
     depths = kwargs.pop("depths", [3, 3, 10, 5])
     num_heads = kwargs.pop("num_heads", [2, 4, 8, 16])
     window_size = kwargs.pop("window_size", [8, 8, 14, 7])
@@ -908,7 +909,8 @@ def mamba_vision_B_21k(pretrained=False, **kwargs):
 @register_pip_model
 @register_model
 def mamba_vision_L(pretrained=False, **kwargs):
-    model_path = kwargs.pop("model_path", "/tmp/mamba_vision_L.pth.tar")
+    # model_path = kwargs.pop("model_path", "/tmp/mamba_vision_L.pth.tar")
+    model_path = kwargs.pop("model_path", "models/MambaVision/checkpoints/mambavision_large_1k.pth.tar")
     depths = kwargs.pop("depths", [3, 3, 10, 5])
     num_heads = kwargs.pop("num_heads", [4, 8, 16, 32])
     window_size = kwargs.pop("window_size", [8, 8, 14, 7])
@@ -1120,6 +1122,3 @@ def mamba_vision_L3_512_21k(pretrained=False, **kwargs):
         model._load_state_dict(model_path)
     return model
 
-
-if __name__ == '__main__':
-    mamba_model = mamba_vision_B(pretrained = True)
