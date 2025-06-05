@@ -108,10 +108,10 @@ def check_Recall_x(database_emb_path, queries_emb_path, k):
 
 
 if __name__ == '__main__':
-    # database_emb_path = 'embedding/database/selavpr_database_nwpu_train.h5'
-    # queries_emb_path = 'embedding/queries/selavpr_queries_nwpu_train.h5'
-    database_emb_path = '/data2/dataset/Redal/Redal/embedding/database/SelaVPR_database_tianzhibei_train.h5'
-    queries_emb_path = '/data2/dataset/Redal/Redal/embedding/queries/SelaVPR_tianzhibei_train.h5'
+    database_emb_path = 'embedding/database/mamba_database_tianzhibei_train.h5' 
+    queries_emb_path = 'embedding/queries/mamba_queries_tianzhibei_train.h5'
+    # database_emb_path = '/data2/dataset/Redal/Redal/embedding/database/SelaVPR_database_tianzhibei_train.h5'
+    # queries_emb_path = '/data2/dataset/Redal/Redal/embedding/queries/SelaVPR_tianzhibei_train.h5'
     current_path = os.getcwd()
     print(current_path)
     # 读取数据

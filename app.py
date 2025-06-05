@@ -93,8 +93,8 @@ def topk_retrieval(args):
     :param top_k: the number of retried k candidate images"""
     # db_path = os.path.join(args.embed_dir, 'database', f'selavpr_database_{args.embed_class}_train.h5')
     # qu_path = os.path.join(args.embed_dir, 'queries', f'selavpr_queries_{args.embed_class}_train.h5')
-    db_path = 'embedding/database/selavpr_references_nwpu_val_0407.h5'
-    qu_path = 'embedding/queries/selavpr_queries_nwpu_val_0407.h5'
+    db_path = 'embedding/database/mamba_references_nwpu_val_0407.h5'
+    qu_path = 'embedding/queries/mamba_queries_nwpu_val_0407.h5'
     db_em, db_ad = embed_to_list(read_data(db_path))
     qu_em, qu_ad = embed_to_list(read_data(qu_path))
     db_em, qu_em = torch.tensor(db_em), torch.tensor(qu_em)

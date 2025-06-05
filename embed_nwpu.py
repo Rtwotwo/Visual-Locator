@@ -81,7 +81,8 @@ class AltoDataset(Dataset):
                             args.dataset_name, args.dataset_proc)
         
         if args.model_name == 'selavpr':
-            # self.vit_model = network.GeoLocalizationNet(weight_path=self.weight_path).to(self.device)
+            self.vit_model = network.GeoLocalizationNet(weight_path=self.weight_path).to(self.device)
+        elif args.model_name == 'mamba':
             self.vit_model = mamba_vision_L(pretrained=True).to(self.device)
         elif args.model_name == 'prithvi_100m':
             # Prithvi_100M model input image should satisfied with 6 channels, depend on the self.chan_proj
@@ -98,14 +99,16 @@ class AltoDataset(Dataset):
         # specified the code for nwpu dataset
         self.embeddings, self.address = [],[]
         self.alto_embed_paths = None      
-        if self.args.dataset_proc == 'val_0407':
-        # if self.args.dataset_proc == 'train':
+        # if self.args.dataset_proc == 'val_0407':
+        if self.args.dataset_proc == 'train':
             # the dataset_model_path(parent dir) with children dirs
             database_query_dirs = os.listdir(self.dataset_model_path)
             for dir in database_query_dirs:
                 # 如果使用nwpu dataset, 需要将database换成references/offset_0_None
-                if dir == 'references' and dir == self.args.dataset_mode:
-                    full_dir = os.path.join(self.dataset_model_path,'references/offset_0_None')
+                if dir == 'database' and dir == self.args.dataset_mode:
+                    # full_dir = os.path.join(self.dataset_model_path,'references/offset_0_None')
+                    full_dir = os.path.join(self.dataset_model_path,'database')
+                    print(full_dir)
                     for file in tqdm(os.listdir(full_dir), desc='====processing train database data'):
                         full_path = os.path.join(full_dir, file)
                         img = self.transform(Image.open(full_path).convert('RGB')).to(self.device).unsqueeze(0)
@@ -191,6 +194,9 @@ class AltoDataset(Dataset):
 ########################### 主程序测试 #######################################
 # python embed_nwpu.py --dataset_name=nwpu --dataset_proc=val_0407  
 # --dist_offset=offset_0_None --save_mode=database --dataset_mode=queries
+
+# python embed_nwpu.py --dataset_name=tianzhibei --dataset_proc=train 
+# --dist_offset=offset_0_None --save_mode=queries --dataset_mode=queries  --model_name=mamba
 #############################################################################
 if __name__ == '__main__':
     # format the alto dataset to matrix and save it
