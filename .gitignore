@@ -9,3 +9,6 @@ embedding/
 
 # ignore checkpoints folder
 models/MambaVision/checkpoints/
+
+# ignore relocate
+relocate/
